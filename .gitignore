@@ -3,6 +3,7 @@
 credentials.json
 token.json
 *.token
+state.json
 
 # Python
 __pycache__/

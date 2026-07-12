@@ -11,7 +11,8 @@ import os
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+# modify = read + move to Trash (recoverable). Needed for the delete-by-tag button.
+SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
 CREDENTIALS_FILE = "credentials.json"
 
 

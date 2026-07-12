@@ -15,6 +15,7 @@ from zoneinfo import ZoneInfo
 import categorize as categorize_mod
 import config
 import gmail_client
+import state
 import telegram_client as tg
 
 
@@ -31,17 +32,18 @@ def display_name(from_header: str) -> str:
     return addr.split("@", 1)[0] if "@" in addr else (addr or "Unknown")
 
 
-def build_messages(emails, result, day=None):
-    """Return a list of Telegram-HTML messages: a header, then one per category.
+def build_messages(emails, result, day=None, with_buttons=True):
+    """Return a list of (text, reply_markup) for Telegram: header, then per category.
 
-    Each category message ends with its #hashtag so Telegram can filter by tag.
+    Each category message ends with its #hashtag and (optionally) a Trash button.
+    When with_buttons, this also records token -> Gmail ids in the state store.
     """
     tz = ZoneInfo(config.DIGEST_TIMEZONE)
     day = day or datetime.now(tz).date()
     label = day.strftime("%A, %d %b %Y")
 
     if not emails:
-        return [f"📭 <b>Lazy Me</b> · {label}\nNo mail today. Enjoy the quiet. 🌤️"]
+        return [(f"📭 <b>Lazy Me</b> · {label}\nNo mail today. Enjoy the quiet. 🌤️", None)]
 
     # Group emails by category, preserving CATEGORY order.
     grouped = OrderedDict((c, []) for c in config.CATEGORIES)
@@ -53,6 +55,7 @@ def build_messages(emails, result, day=None):
         e = emails[idx] if isinstance(idx, int) and 0 <= idx < len(emails) else {}
         grouped[cat].append(
             {
+                "id": e.get("id"),
                 "summary": (item.get("summary") or e.get("subject", "")).strip(),
                 "sender": display_name(e.get("from", "")),
             }
@@ -60,18 +63,14 @@ def build_messages(emails, result, day=None):
 
     digests = result.get("category_digests", {})
 
-    # Header: title, date, total, and a compact per-tag count line.
-    counts = " ".join(
-        f"{config.EMOJI[c]}{len(v)}" for c, v in grouped.items() if v
-    )
+    counts = " ".join(f"{config.EMOJI[c]}{len(v)}" for c, v in grouped.items() if v)
     header = (
         f"📬 <b>Lazy Me</b> · {label}\n"
         f"<b>{len(emails)}</b> mail today\n"
         f"{counts}"
     )
-    messages = [header]
+    messages = [(header, None)]
 
-    # One message per non-empty category.
     for cat, items in grouped.items():
         if not items:
             continue
@@ -87,8 +86,16 @@ def build_messages(emails, result, day=None):
             if it["sender"]:
                 lines.append(f"   <i>{tg.esc(it['sender'])}</i>")
         lines.append("")
-        lines.append(tag)  # tappable hashtag → filter this category in Telegram
-        messages.append("\n".join(lines))
+        lines.append(tag)
+
+        markup = None
+        if with_buttons:
+            ids = [it["id"] for it in items if it["id"]]
+            if ids:
+                token = state.new_token()
+                state.put(token, cat, ids)
+                markup = tg.trash_button(len(ids), tag, token)
+        messages.append(("\n".join(lines), markup))
 
     return messages
 
@@ -126,16 +133,16 @@ def main():
     else:
         result = {"emails": [], "category_digests": {}}
 
-    messages = build_messages(emails, result, day)
+    messages = build_messages(emails, result, day, with_buttons=not args.dry_run)
 
     if args.dry_run:
         print("\n----- DIGEST (dry-run) -----\n")
-        print("\n\n──────────\n\n".join(messages))
+        print("\n\n──────────\n\n".join(text for text, _ in messages))
         return
 
     print(f"Sending {len(messages)} message(s) to Telegram...")
-    for msg in messages:
-        tg.send(msg)
+    for text, markup in messages:
+        tg.send(text, reply_markup=markup)
     print("Done.")
 
 

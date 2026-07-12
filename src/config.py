@@ -10,7 +10,8 @@ GMAIL_CLIENT_ID = os.environ.get("GMAIL_CLIENT_ID", "")
 GMAIL_CLIENT_SECRET = os.environ.get("GMAIL_CLIENT_SECRET", "")
 GMAIL_REFRESH_TOKEN = os.environ.get("GMAIL_REFRESH_TOKEN", "")
 GMAIL_TOKEN_URI = "https://oauth2.googleapis.com/token"
-GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+# modify = read + move to Trash (recoverable). NOT full delete.
+GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
 
 # --- LLM (Gemini) ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")

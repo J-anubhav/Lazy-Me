@@ -5,8 +5,12 @@ import requests
 
 import config
 
-_API = "https://api.telegram.org/bot{token}/sendMessage"
+_BASE = "https://api.telegram.org/bot{token}/{method}"
 _MAX = 4096  # Telegram hard limit per message.
+
+
+def _url(method: str) -> str:
+    return _BASE.format(token=config.TELEGRAM_BOT_TOKEN, method=method)
 
 
 def _chunks(text: str):
@@ -26,20 +30,62 @@ def _chunks(text: str):
         yield buf
 
 
-def send(text: str):
-    url = _API.format(token=config.TELEGRAM_BOT_TOKEN)
-    for chunk in _chunks(text):
-        resp = requests.post(
-            url,
-            json={
-                "chat_id": config.TELEGRAM_CHAT_ID,
-                "text": chunk,
-                "parse_mode": "HTML",
-                "disable_web_page_preview": True,
-            },
-            timeout=30,
-        )
+def send(text: str, reply_markup=None):
+    """Send a message. If reply_markup is given, it's attached to the LAST chunk."""
+    chunks = list(_chunks(text))
+    for i, chunk in enumerate(chunks):
+        payload = {
+            "chat_id": config.TELEGRAM_CHAT_ID,
+            "text": chunk,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+        }
+        if reply_markup and i == len(chunks) - 1:
+            payload["reply_markup"] = reply_markup
+        resp = requests.post(_url("sendMessage"), json=payload, timeout=30)
         resp.raise_for_status()
+
+
+def trash_button(count: int, tag: str, token: str) -> dict:
+    """Inline keyboard: a single 'trash all' button carrying a token."""
+    return {
+        "inline_keyboard": [
+            [{"text": f"🗑 Trash all {tag} ({count})", "callback_data": f"trash:{token}"}]
+        ]
+    }
+
+
+def get_updates(offset=None, timeout=25):
+    """Long-poll for updates (used by the bot poller)."""
+    params = {"timeout": timeout}
+    if offset is not None:
+        params["offset"] = offset
+    resp = requests.get(_url("getUpdates"), params=params, timeout=timeout + 10)
+    resp.raise_for_status()
+    return resp.json().get("result", [])
+
+
+def answer_callback(callback_id: str, text: str = ""):
+    requests.post(
+        _url("answerCallbackQuery"),
+        json={"callback_query_id": callback_id, "text": text},
+        timeout=30,
+    )
+
+
+def edit_message(chat_id, message_id, text: str):
+    """Replace a message's text and drop its buttons (after acting on it)."""
+    requests.post(
+        _url("editMessageText"),
+        json={
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": text,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+        },
+        timeout=30,
+    )
 
 
 def esc(text: str) -> str:

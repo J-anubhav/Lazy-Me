@@ -109,9 +109,25 @@ def fetch_for_date(day):
         body = " ".join(body.split())  # collapse whitespace
         emails.append(
             {
+                "id": mid,
                 "from": _header(headers, "From"),
                 "subject": _header(headers, "Subject", "(no subject)"),
                 "snippet": body[: config.BODY_TRUNCATE],
             }
         )
     return emails
+
+
+def trash_messages(ids):
+    """Move the given message ids to Gmail Trash (recoverable ~30 days).
+
+    Returns the count moved. Uses one batchModify call.
+    """
+    ids = [i for i in ids if i]
+    if not ids:
+        return 0
+    service = _service()
+    service.users().messages().batchModify(
+        userId="me", body={"ids": ids, "addLabelIds": ["TRASH"]}
+    ).execute()
+    return len(ids)
