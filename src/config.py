@@ -27,17 +27,23 @@ BODY_TRUNCATE = int(os.environ.get("BODY_TRUNCATE", "500"))
 # Send a message even when the inbox had no mail for the day.
 SEND_ON_EMPTY = os.environ.get("SEND_ON_EMPTY", "true").lower() == "true"
 
-# Ordered category list. Gemini must pick exactly one of these per email.
-CATEGORIES = [
-    "Job — Rejection",
-    "Job — Interview/Progress",
-    "Job — Application Received",
-    "Finance/Bills",
-    "Ads/Promotions",
-    "Personal",
-    "Newsletters",
-    "Other/Important",
+# Ordered categories with a display emoji and a Telegram hashtag (no spaces).
+# The hashtag makes each category tappable/filterable in Telegram.
+CATEGORY_META = [
+    {"name": "Job — Rejection", "emoji": "❌", "tag": "#JobRejection"},
+    {"name": "Job — Interview/Progress", "emoji": "✅", "tag": "#JobInterview"},
+    {"name": "Job — Application Received", "emoji": "📨", "tag": "#JobApplied"},
+    {"name": "Job — Listings/Alerts", "emoji": "💼", "tag": "#JobAlerts"},
+    {"name": "Finance/Bills", "emoji": "💰", "tag": "#Finance"},
+    {"name": "Ads/Promotions", "emoji": "🏷️", "tag": "#Promotions"},
+    {"name": "Personal", "emoji": "👤", "tag": "#Personal"},
+    {"name": "Newsletters", "emoji": "📰", "tag": "#Newsletters"},
+    {"name": "Other/Important", "emoji": "📌", "tag": "#Other"},
 ]
+
+CATEGORIES = [c["name"] for c in CATEGORY_META]
+EMOJI = {c["name"]: c["emoji"] for c in CATEGORY_META}
+TAG = {c["name"]: c["tag"] for c in CATEGORY_META}
 
 
 def require(*names: str) -> None:

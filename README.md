@@ -73,10 +73,26 @@ The daily GitHub Actions run always digests **today**.
 4. It then runs automatically every day at **21:00 IST** (`30 15 * * *` UTC).
    Change the time in [`.github/workflows/digest.yml`](.github/workflows/digest.yml).
 
+## How mail gets sorted
+- If `GEMINI_API_KEY` is set and has quota → **Gemini** classifies + summarizes.
+- Otherwise → a **free rule-based heuristic** (`heuristic()` in
+  [`src/categorize.py`](src/categorize.py)) sorts by sender + subject keywords.
+  No API, no cost — tags still work.
+
+Each category is sent as its **own Telegram message** ending in a **#hashtag**
+(`#JobRejection`, `#JobAlerts`, `#Promotions`, …). Tap a hashtag in Telegram to
+filter every message of that category across all days.
+
 ## Customize
-- **Categories:** edit `CATEGORIES` in [`src/config.py`](src/config.py).
+- **Categories / emojis / tags:** edit `CATEGORY_META` in [`src/config.py`](src/config.py).
+- **Sorting rules (no-LLM):** edit `heuristic()` in [`src/categorize.py`](src/categorize.py).
 - **Timezone / schedule:** `DIGEST_TIMEZONE` env + the cron in the workflow.
 - **Quiet on empty days:** set `SEND_ON_EMPTY=false`.
+
+## Roadmap
+- **Delete a whole tag from Telegram** — reply/command like `/delete #Promotions`
+  to trash all those emails. Needs the Gmail **modify** scope (currently read-only)
+  and a bot command listener (webhook or polling) — separate build.
 
 ## Notes
 - Gmail scope is **read-only** (`gmail.readonly`) — the bot can't send or delete.

@@ -18,43 +18,79 @@ import gmail_client
 import telegram_client as tg
 
 
-def build_digest(emails, result, day=None) -> str:
-    """Format the categorized emails into a Telegram-HTML digest string."""
+def display_name(from_header: str) -> str:
+    """'Jane Doe <jane@x.com>' -> 'Jane Doe'. Drops the email address entirely."""
+    raw = (from_header or "").strip()
+    if "<" in raw:
+        raw = raw.split("<", 1)[0].strip()
+    raw = raw.strip('"').strip()
+    if raw:
+        return raw
+    # No display name: fall back to the address' local part.
+    addr = (from_header or "").strip().strip("<>")
+    return addr.split("@", 1)[0] if "@" in addr else (addr or "Unknown")
+
+
+def build_messages(emails, result, day=None):
+    """Return a list of Telegram-HTML messages: a header, then one per category.
+
+    Each category message ends with its #hashtag so Telegram can filter by tag.
+    """
     tz = ZoneInfo(config.DIGEST_TIMEZONE)
     day = day or datetime.now(tz).date()
     label = day.strftime("%A, %d %b %Y")
 
     if not emails:
-        return f"<b>📭 Lazy Me — {label}</b>\nNo mail on {label}. Enjoy the quiet."
+        return [f"📭 <b>Lazy Me</b> · {label}\nNo mail today. Enjoy the quiet. 🌤️"]
 
-    # Group email one-liners by category, preserving CATEGORIES order.
+    # Group emails by category, preserving CATEGORY order.
     grouped = OrderedDict((c, []) for c in config.CATEGORIES)
     for item in result.get("emails", []):
-        cat = item.get("category", "Other/Important")
+        cat = item.get("category")
         if cat not in grouped:
-            grouped[cat] = []
-        summary = item.get("summary", "").strip()
+            cat = "Other/Important"
         idx = item.get("index")
-        if summary:
-            grouped[cat].append(summary)
-        elif isinstance(idx, int) and 0 <= idx < len(emails):
-            e = emails[idx]
-            grouped[cat].append(f"{e['subject']} — {e['from']}")
+        e = emails[idx] if isinstance(idx, int) and 0 <= idx < len(emails) else {}
+        grouped[cat].append(
+            {
+                "summary": (item.get("summary") or e.get("subject", "")).strip(),
+                "sender": display_name(e.get("from", "")),
+            }
+        )
 
     digests = result.get("category_digests", {})
 
-    lines = [f"<b>📬 Lazy Me — {label}</b>", f"{len(emails)} mail.\n"]
+    # Header: title, date, total, and a compact per-tag count line.
+    counts = " ".join(
+        f"{config.EMOJI[c]}{len(v)}" for c, v in grouped.items() if v
+    )
+    header = (
+        f"📬 <b>Lazy Me</b> · {label}\n"
+        f"<b>{len(emails)}</b> mail today\n"
+        f"{counts}"
+    )
+    messages = [header]
+
+    # One message per non-empty category.
     for cat, items in grouped.items():
         if not items:
             continue
-        lines.append(f"<b>{tg.esc(cat)}</b> ({len(items)})")
+        emoji = config.EMOJI[cat]
+        tag = config.TAG[cat]
+        lines = [f"{emoji} <b>{tg.esc(cat)}</b> · {len(items)}"]
         blurb = digests.get(cat, "").strip()
         if blurb:
             lines.append(f"<i>{tg.esc(blurb)}</i>")
-        for s in items:
-            lines.append(f"• {tg.esc(s)}")
         lines.append("")
-    return "\n".join(lines).strip()
+        for it in items:
+            lines.append(f"• {tg.esc(it['summary']) or '(no subject)'}")
+            if it["sender"]:
+                lines.append(f"   <i>{tg.esc(it['sender'])}</i>")
+        lines.append("")
+        lines.append(tag)  # tappable hashtag → filter this category in Telegram
+        messages.append("\n".join(lines))
+
+    return messages
 
 
 def main():
@@ -85,21 +121,21 @@ def main():
         return
 
     if emails:
-        config.require("GEMINI_API_KEY")
-        print("Categorizing with Gemini...")
+        print("Categorizing...")
         result = categorize_mod.categorize(emails)
     else:
         result = {"emails": [], "category_digests": {}}
 
-    digest = build_digest(emails, result, day)
+    messages = build_messages(emails, result, day)
 
     if args.dry_run:
         print("\n----- DIGEST (dry-run) -----\n")
-        print(digest)
+        print("\n\n──────────\n\n".join(messages))
         return
 
-    print("Sending to Telegram...")
-    tg.send(digest)
+    print(f"Sending {len(messages)} message(s) to Telegram...")
+    for msg in messages:
+        tg.send(msg)
     print("Done.")
 
 
