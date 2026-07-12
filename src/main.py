@@ -18,13 +18,14 @@ import gmail_client
 import telegram_client as tg
 
 
-def build_digest(emails, result) -> str:
+def build_digest(emails, result, day=None) -> str:
     """Format the categorized emails into a Telegram-HTML digest string."""
     tz = ZoneInfo(config.DIGEST_TIMEZONE)
-    today = datetime.now(tz).strftime("%A, %d %b %Y")
+    day = day or datetime.now(tz).date()
+    label = day.strftime("%A, %d %b %Y")
 
     if not emails:
-        return f"<b>📭 Lazy Me — {today}</b>\nNo new mail today. Enjoy the quiet."
+        return f"<b>📭 Lazy Me — {label}</b>\nNo mail on {label}. Enjoy the quiet."
 
     # Group email one-liners by category, preserving CATEGORIES order.
     grouped = OrderedDict((c, []) for c in config.CATEGORIES)
@@ -42,7 +43,7 @@ def build_digest(emails, result) -> str:
 
     digests = result.get("category_digests", {})
 
-    lines = [f"<b>📬 Lazy Me — {today}</b>", f"{len(emails)} mail today.\n"]
+    lines = [f"<b>📬 Lazy Me — {label}</b>", f"{len(emails)} mail.\n"]
     for cat, items in grouped.items():
         if not items:
             continue
@@ -63,14 +64,20 @@ def main():
         action="store_true",
         help="Print the digest to stdout instead of sending to Telegram.",
     )
+    parser.add_argument(
+        "--date",
+        default="today",
+        help="Which day to digest: 'today' (default), 'yesterday', or YYYY-MM-DD.",
+    )
     args = parser.parse_args()
 
     config.require("GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN")
     if not args.dry_run:
         config.require("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID")
 
-    print("Fetching today's mail...")
-    emails = gmail_client.fetch_today()
+    day = gmail_client.resolve_date(args.date)
+    print(f"Fetching mail for {day.isoformat()}...")
+    emails = gmail_client.fetch_for_date(day)
     print(f"Fetched {len(emails)} email(s).")
 
     if not emails and not config.SEND_ON_EMPTY:
@@ -78,13 +85,13 @@ def main():
         return
 
     if emails:
-        config.require("OPENAI_API_KEY")
-        print("Categorizing with OpenAI...")
+        config.require("GEMINI_API_KEY")
+        print("Categorizing with Gemini...")
         result = categorize_mod.categorize(emails)
     else:
         result = {"emails": [], "category_digests": {}}
 
-    digest = build_digest(emails, result)
+    digest = build_digest(emails, result, day)
 
     if args.dry_run:
         print("\n----- DIGEST (dry-run) -----\n")

@@ -22,11 +22,29 @@ def _service():
     return build("gmail", "v1", credentials=creds, cache_discovery=False)
 
 
-def _today_window():
-    """Return (start_epoch, end_epoch) covering 'today' in the configured tz."""
+def resolve_date(spec: str | None):
+    """Turn a date spec into a date in the configured tz.
+
+    Accepts None/'today', 'yesterday', or 'YYYY-MM-DD'. Returns a date object.
+    """
     tz = ZoneInfo(config.DIGEST_TIMEZONE)
-    now = datetime.now(tz)
-    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today = datetime.now(tz).date()
+    if not spec or spec.lower() == "today":
+        return today
+    if spec.lower() == "yesterday":
+        return today - timedelta(days=1)
+    try:
+        return datetime.strptime(spec, "%Y-%m-%d").date()
+    except ValueError:
+        raise SystemExit(
+            f"Bad --date '{spec}'. Use 'today', 'yesterday', or YYYY-MM-DD."
+        )
+
+
+def _day_window(day):
+    """Return (start_epoch, end_epoch) covering the given date in the configured tz."""
+    tz = ZoneInfo(config.DIGEST_TIMEZONE)
+    start = datetime(day.year, day.month, day.day, tzinfo=tz)
     end = start + timedelta(days=1)
     return int(start.timestamp()), int(end.timestamp())
 
@@ -57,10 +75,10 @@ def _extract_body(payload) -> str:
     return ""
 
 
-def fetch_today():
-    """Return a list of {from, subject, snippet} for today's messages."""
+def fetch_for_date(day):
+    """Return a list of {from, subject, snippet} for the given date's messages."""
     service = _service()
-    start, end = _today_window()
+    start, end = _day_window(day)
     query = f"after:{start} before:{end}"
 
     ids = []

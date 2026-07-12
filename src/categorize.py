@@ -1,7 +1,8 @@
-"""OpenAI: classify each email into a category and write short summaries."""
+"""Gemini: classify each email into a category and write short summaries."""
 import json
 
-from openai import OpenAI
+from google import genai
+from google.genai import types
 
 import config
 
@@ -59,17 +60,16 @@ def categorize(emails):
     )
 
     try:
-        client = OpenAI(api_key=config.OPENAI_API_KEY)
-        resp = client.chat.completions.create(
-            model=config.OPENAI_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
-            temperature=0,
+        client = genai.Client(api_key=config.GEMINI_API_KEY)
+        resp = client.models.generate_content(
+            model=config.GEMINI_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json"),
         )
-        data = json.loads(resp.choices[0].message.content)
+        data = json.loads(resp.text)
         if not isinstance(data.get("emails"), list):
             raise ValueError("missing 'emails' list")
         return data
     except Exception as exc:  # noqa: BLE001 - never let triage crash the digest
-        print(f"[categorize] OpenAI failed ({exc}); using fallback.")
+        print(f"[categorize] Gemini failed ({exc}); using fallback.")
         return _fallback(emails)

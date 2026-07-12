@@ -55,9 +55,14 @@ cp .env.example .env   # then paste the values from steps 2–4
 
 ## Test locally
 ```bash
-python src/main.py --dry-run   # prints the digest, sends nothing
-python src/main.py             # actually sends to Telegram
+python src/main.py --dry-run                 # today, print only, sends nothing
+python src/main.py                           # today, actually sends to Telegram
+python src/main.py --date yesterday          # yesterday's mail
+python src/main.py --date 2026-07-10          # a specific day (YYYY-MM-DD)
+python src/main.py --date yesterday --dry-run # combine flags
 ```
+`--date` accepts `today` (default), `yesterday`, or `YYYY-MM-DD`, in `DIGEST_TIMEZONE`.
+The daily GitHub Actions run always digests **today**.
 
 ## Deploy (GitHub Actions)
 1. Push this repo to GitHub.
