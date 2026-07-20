@@ -198,7 +198,8 @@ class SenderParsingTests(unittest.TestCase):
     def test_display_name_variants(self):
         self.assertEqual(main.display_name("Jane Doe <jane@x.com>"), "Jane Doe")
         self.assertEqual(main.display_name('"Quoted" <q@x.com>'), "Quoted")
-        self.assertEqual(main.display_name("bare@addr.com"), "bare")
+        self.assertEqual(main.display_name("bare@addr.com"), "bare@addr.com")
+        self.assertEqual(main.display_name("<only@addr.com>"), "only")
         self.assertEqual(main.display_name(""), "Unknown")
 
     def test_sender_address_variants(self):
