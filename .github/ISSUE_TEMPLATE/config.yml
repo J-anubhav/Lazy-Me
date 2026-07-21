@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔐 Report a security vulnerability
+    url: https://github.com/J-anubhav/Laze-Me/security/advisories/new
+    about: Report privately — please do not open a public issue for security problems.
+  - name: 💬 Questions and setup help
+    url: https://github.com/J-anubhav/Laze-Me/discussions
+    about: Stuck on OAuth, tokens, or the cron? Ask in Discussions.

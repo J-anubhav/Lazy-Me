@@ -1,0 +1,55 @@
+name: 💡 Feature request
+description: Suggest a new capability or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas welcome. If you're planning to build it yourself, say so — it saves
+        two people writing the same patch.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What's annoying or missing today? Describe the situation, not the solution.
+      placeholder: "My recruiter spam lands in Other/Important because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What you'd like
+      description: How should it work from a user's point of view?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area
+      options:
+        - Categorization rules / heuristic
+        - New category bucket
+        - New delivery channel (Discord, WhatsApp, Slack...)
+        - Digest formatting
+        - New Gmail action (archive, label, mark read)
+        - Scheduling / deployment
+        - Documentation
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Optional. Including "why config can't already do this."
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Would you like to build it?
+      options:
+        - label: I'd like to open a PR for this

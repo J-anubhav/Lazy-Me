@@ -15,6 +15,7 @@
 </p>
 
 <p>
+<a href="https://github.com/J-anubhav/Laze-Me/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/J-anubhav/Laze-Me/actions/workflows/tests.yml/badge.svg"></a>
 <img alt="Python" src="https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white">
 <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-E8A23D">
 <img alt="Runs on" src="https://img.shields.io/badge/runs%20on-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white">
@@ -34,7 +35,7 @@ Your inbox is a firehose — rejections, recruiter spam, job alerts, bills, news
 - 📬 **One digest, not 40 emails.** A clean per-category summary lands in Telegram once a day.
 - 🏷️ **Tagged and tappable.** Every category is a `#hashtag` you can filter in Telegram — and one button trashes the whole tag.
 - 🆓 **Free by default.** A built-in rule-based sorter means **no OpenAI/Gemini key needed.** Add one only if you want AI-written summaries.
-- 🔒 **Read-only by default.** Gmail access is `readonly` until *you* opt into the trash feature.
+- 🔒 **Trash, never delete.** Gmail access is capped at `gmail.modify` — mail moves to Trash (recoverable ~30 days) and can never be permanently deleted.
 - ☁️ **Runs itself.** GitHub Actions cron fires it daily — your PC can be off.
 - 🧩 **Yours to bend.** Categories, sorting rules, timezone, and schedule are all a few lines of config.
 
@@ -49,7 +50,7 @@ Your inbox is a firehose — rejections, recruiter spam, job alerts, bills, news
 | 📥 | **Gmail fetch** | Pulls any day's mail via the official Gmail API (OAuth, no password stored). |
 | 🧠 | **Smart categorize** | 9 built-in buckets — rejections, interviews, applications, job alerts, finance, promos, personal, newsletters, other. |
 | 🆓 | **Zero-key mode** | Rule-based heuristic sorts mail with **no AI key**. Optional Gemini/OpenAI upgrade for AI summaries. |
-| 📤 | **Telegram delivery** | A header card + one message per category, sender names only (email addresses stripped). |
+| 📤 | **Telegram delivery** | A header card + one message per category, showing sender name **and** real address so spoofing is visible. |
 | 🏷️ | **Tag filtering** | Each card ends in a `#hashtag` — tap in Telegram to see that category across all days. |
 | 🗑️ | **Trash by tag** | A **🗑 Trash all #Tag** button moves the whole category to Gmail Trash (recoverable ~30 days). |
 | 📅 | **Any date** | `--date today \| yesterday \| YYYY-MM-DD` — re-run a digest for any day. |
@@ -80,8 +81,8 @@ flowchart LR
 
 ```bash
 # 1. Clone
-git clone https://github.com/J-anubhav/Lazy-Me.git
-cd Lazy-Me
+git clone https://github.com/J-anubhav/Laze-Me.git
+cd Laze-Me
 
 # 2. Install
 python -m venv .venv && . .venv/Scripts/activate   # macOS/Linux: source .venv/bin/activate
@@ -176,21 +177,39 @@ All settings live in `.env` (copy from [`.env.example`](.env.example)):
 
 ## 🤝 Contributing
 
-Contributions are welcome! Whether it's a new category rule, a delivery channel, or a bug fix:
+Contributions are welcome — new category rules, delivery channels, bug fixes, docs.
 
-1. Fork the repo and create a branch (`git checkout -b feat/my-idea`).
-2. Make your change and test it with `python src/main.py --dry-run`.
-3. Open a pull request describing what and why.
+**Start here: [CONTRIBUTING.md](CONTRIBUTING.md)** for setup, testing, and the PR
+process. Also see the [Code of Conduct](CODE_OF_CONDUCT.md).
 
-Good first issues: add heuristic rules for your inbox's senders, add a new `CATEGORY_META` bucket, or improve the digest formatting.
+```bash
+# Fork, clone, then:
+pip install -r requirements.txt
+python -m unittest discover tests -v    # no credentials needed — all mocked
+```
+
+Good first contributions: add heuristic rules for senders your inbox sees, add a
+new `CATEGORY_META` bucket, or improve digest formatting. Look for issues
+labelled [`good first issue`](https://github.com/J-anubhav/Laze-Me/labels/good%20first%20issue).
+
+Every PR runs the test suite on Python 3.9 and 3.12. `main` is protected —
+all changes go through a reviewed pull request.
 
 ---
 
 ## 🔐 Security & privacy
 
-- Gmail scope is **read-only** until you opt into trashing; even then it's `gmail.modify` (never full account access).
+- Gmail scope is capped at **`gmail.modify`** — enough to move mail to Trash
+  (recoverable ~30 days), never enough to permanently delete or touch account settings.
 - All secrets stay in `.env` (git-ignored) or GitHub Actions secrets — nothing is committed.
-- Email **addresses are stripped** from digests; only sender display names are shown.
+- Digests show the sender's **real email address** alongside the display name, so a
+  spoofed "Google Security" can't hide behind a friendly name.
+- Email content is treated as **untrusted input** to the AI classifier, and the
+  catch-all `Other/Important` category never gets a bulk-trash button.
+- Trash buttons are single-use, expire after 3 days, and only respond to your own
+  Telegram user id.
+
+Found a vulnerability? Please report it privately — see [SECURITY.md](SECURITY.md).
 
 ---
 
@@ -202,7 +221,7 @@ Good first issues: add heuristic rules for your inbox's senders, add a new `CATE
 <br>
 <strong>If Lazy Me saves you from your inbox, give it a ⭐ — it helps others find it.</strong>
 <br><br>
-<a href="https://github.com/J-anubhav/Lazy-Me">
+<a href="https://github.com/J-anubhav/Laze-Me">
 <img alt="Star on GitHub" src="https://img.shields.io/badge/⭐_Star_on_GitHub-171A21?style=for-the-badge&logo=github">
 </a>
 </div>
