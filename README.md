@@ -16,7 +16,7 @@
 
 <p>
 <a href="https://github.com/J-anubhav/Laze-Me/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/J-anubhav/Laze-Me/actions/workflows/tests.yml/badge.svg"></a>
-<img alt="Python" src="https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white">
+<img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white">
 <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-E8A23D">
 <img alt="Runs on" src="https://img.shields.io/badge/runs%20on-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white">
 <img alt="Delivers to" src="https://img.shields.io/badge/delivers%20to-Telegram-26A5E4?logo=telegram&logoColor=white">
@@ -77,7 +77,7 @@ flowchart LR
 
 ## 🚀 Quick Start
 
-> **Prerequisites:** Python 3.9+, a Google account, and a Telegram account.
+> **Prerequisites:** Python 3.10+, a Google account, and a Telegram account.
 
 ```bash
 # 1. Clone

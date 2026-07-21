@@ -45,7 +45,7 @@ python -m unittest discover tests -v
 ```
 
 All 61 tests must pass before you open a PR. CI runs the same suite on Python
-3.9 and 3.12; a red build blocks the merge.
+3.10 and 3.12; a red build blocks the merge.
 
 To check your change end to end without sending anything:
 
